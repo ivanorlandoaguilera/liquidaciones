@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consolidación de Liquidaciones de Tesorería</title>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <main class="contenedor">
+        <!-- Pantalla de login -->
+        <section id="vista-login" class="vista" hidden>
+            <header>
+                <h1>Acceso restringido</h1>
+                <p class="subtitulo">Ingrese sus credenciales para continuar.</p>
+            </header>
+
+            <div class="panel-login">
+                <label class="campo">
+                    <span>URL del servidor</span>
+                    <input type="text" id="input-url" placeholder="https://xxxx.ngrok-free.app (vacío = mismo origen)">
+                </label>
+                <label class="campo">
+                    <span>Usuario</span>
+                    <input type="text" id="input-usuario" autocomplete="username">
+                </label>
+                <label class="campo">
+                    <span>Contraseña</span>
+                    <input type="password" id="input-contrasena" autocomplete="current-password">
+                </label>
+                <button id="btn-login" class="btn">Ingresar</button>
+                <p id="login-error" class="login-error" hidden></p>
+            </div>
+        </section>
+
+        <!-- Pantalla principal -->
+        <section id="vista-app" class="vista" hidden>
+            <header>
+                <h1>Consolidación de Liquidaciones de Tesorería</h1>
+                <p class="subtitulo">Adjunte las liquidaciones (PDF) de las cámaras y genere el Excel consolidado.</p>
+                <div class="barra-sesion">
+                    <span id="info-sesion"></span>
+                    <button id="btn-salir" class="btn btn-secundario">Salir</button>
+                </div>
+            </header>
+
+            <div class="opcion-auto">
+                <label class="switch">
+                    <input type="checkbox" id="toggle-auto" checked>
+                    <span class="slider"></span>
+                </label>
+                <div>
+                    <strong>Procesamiento automático</strong>
+                    <small>Procesar al subir los archivos. Si lo desactiva, use el botón "Procesar".</small>
+                </div>
+            </div>
+
+            <div id="drop-zone" class="drop-zone">
+                <input type="file" id="file-input" accept=".pdf" multiple hidden>
+                <p class="drop-titulo">Arrastre y suelte los PDFs aquí</p>
+                <p class="drop-hint">o haga clic para seleccionarlos (puede elegir varios)</p>
+            </div>
+
+            <ul id="lista-archivos" class="lista-archivos"></ul>
+
+            <div class="acciones">
+                <button id="btn-procesar" class="btn" disabled>Procesar</button>
+                <button id="btn-limpiar" class="btn btn-secundario" disabled>Limpiar</button>
+            </div>
+
+            <div id="progreso" class="progreso" hidden>
+                <div class="barra"><div id="barra-inner" class="barra-inner"></div></div>
+                <p id="progreso-texto" class="progreso-texto"></p>
+            </div>
+
+            <div id="resultado" class="resultado" hidden></div>
+        </section>
+    </main>
+
+    <script src="static/main.js"></script>
+</body>
+</html>

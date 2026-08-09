@@ -1,0 +1,9 @@
+# No subir el backend ni credenciales a GitHub Pages
+.env
+.env.example
+app.py
+extractor.py
+requirements.txt
+README.md
+__pycache__/
+*.pyc
