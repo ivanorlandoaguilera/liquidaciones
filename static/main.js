@@ -249,7 +249,9 @@ function programarAutomatico() {
 }
 
 function vigilarJob(jobId) {
+    let cerrado = false;
     const intervalo = setInterval(async () => {
+        if (cerrado) return;
         try {
             const { resp, data } = await llamar(`/estado/${jobId}`);
             if (resp.status === 401) {
@@ -271,6 +273,7 @@ function vigilarJob(jobId) {
                 return;
             }
 
+            cerrado = true;
             clearInterval(intervalo);
             barraInner.style.width = '100%';
             progresoTexto.textContent = 'Finalizando...';
@@ -293,16 +296,22 @@ function vigilarJob(jobId) {
             finalizarProcesamiento();
         } catch (err) {
             clearInterval(intervalo);
-            mostrarResultado(false, err.message || 'Error al consultar el estado.', []);
+            if (!cerrado) {
+                mostrarResultado(false, err.message || 'Error al consultar el estado.', []);
+            }
             finalizarProcesamiento();
         }
     }, 500);
 }
 
-async function descargarExcel(jobId) {
+async function descargarExcel(jobId, reintento = true) {
     try {
         const resp = await fetch(`${apiBase()}/descargar/${jobId}`, { headers: cabeceras() });
         if (!resp.ok) {
+            if (reintento) {
+                await new Promise(r => setTimeout(r, 1000));
+                return descargarExcel(jobId, false);
+            }
             throw new Error('No se pudo descargar el archivo.');
         }
         const blob = await resp.blob();
