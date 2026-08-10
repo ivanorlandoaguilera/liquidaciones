@@ -88,15 +88,27 @@ btnLogin.addEventListener('click', async () => {
     loginError.hidden = true;
     btnLogin.disabled = true;
 
+    if (!url) {
+        loginError.textContent = 'Ingresa la URL del servidor (la de ngrok, ej: https://xxxx.ngrok-free.app).';
+        loginError.hidden = false;
+        btnLogin.disabled = false;
+        return;
+    }
+
+    const base = url.replace(/\/+$/, '').replace(/^http:\/\//, 'https://');
+
     try {
-        const resp = await fetch(`${url.replace(/\/+$/, '')}/login`, {
+        const resp = await fetch(`${base}/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' },
             body: JSON.stringify({ usuario, contrasena }),
         });
-        const data = await resp.json();
-        if (!resp.ok || !data.ok) {
-            loginError.textContent = data.error || 'No se pudo iniciar sesión.';
+        let data = null;
+        try { data = await resp.json(); } catch (e) { data = null; }
+        if (!data || !data.ok) {
+            loginError.textContent = data && data.error
+                ? data.error
+                : `El servidor respondió (${resp.status}) pero no es la URL correcta. Verifica que pegaste la URL completa de ngrok.`;
             loginError.hidden = false;
             return;
         }
@@ -105,7 +117,7 @@ btnLogin.addEventListener('click', async () => {
         localStorage.setItem(STORAGE_USUARIO, usuario);
         mostrarApp();
     } catch (e) {
-        loginError.textContent = 'No se pudo conectar con el servidor.';
+        loginError.textContent = `No se pudo conectar con "${base}". Verifica que ngrok esté corriendo en la máquina y que la URL sea exacta.`;
         loginError.hidden = false;
     } finally {
         btnLogin.disabled = false;
