@@ -4,10 +4,20 @@
     padding: 0;
 }
 
+:root {
+    --fpt-primary: #1a3860;
+    --fpt-secondary: #0b0d28;
+    --fpt-accent: #2a6fba;
+    --fpt-light: #f5f7fa;
+    --fpt-white: #ffffff;
+}
+
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: #0f172a;
-    color: #e2e8f0;
+    font-family: "Figtree", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(1200px 600px at 80% -10%, #2a6fba55, transparent 60%),
+                radial-gradient(900px 500px at 10% 110%, #1a386055, transparent 60%),
+                var(--fpt-secondary);
+    color: #e4ecf7;
     min-height: 100vh;
     display: flex;
     align-items: center;
@@ -17,11 +27,29 @@ body {
 
 .contenedor {
     width: 100%;
-    max-width: 720px;
-    background: #1e293b;
-    border-radius: 12px;
+    max-width: 760px;
+    background: linear-gradient(180deg, var(--fpt-primary), var(--fpt-secondary));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
     padding: 2rem;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+}
+
+.cabecera-fpt {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin: -2rem -2rem 1.25rem -2rem;
+    padding: 0.9rem 1.5rem;
+    background: var(--fpt-light);
+    border-bottom: 1px solid rgba(26, 56, 96, 0.15);
+}
+
+.logo-fpt {
+    height: 42px;
+    width: auto;
+    max-width: 100%;
 }
 
 .panel-login {
@@ -39,21 +67,23 @@ body {
 
 .campo span {
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: #a8bcd4;
 }
 
 .campo input {
     padding: 0.65rem 0.8rem;
-    border-radius: 8px;
-    border: 1px solid #475569;
-    background: #334155;
-    color: #e2e8f0;
+    border-radius: 10px;
+    border: 1px solid #46608c;
+    background: rgba(11, 13, 40, 0.45);
+    color: #f0f5fc;
     font-size: 0.95rem;
+    font-family: inherit;
 }
 
 .campo input:focus {
     outline: none;
-    border-color: #38bdf8;
+    border-color: var(--fpt-accent);
+    box-shadow: 0 0 0 3px rgba(42, 111, 186, 0.25);
 }
 
 .login-error {
@@ -68,9 +98,9 @@ body {
     gap: 1rem;
     margin-top: 1rem;
     padding-top: 1rem;
-    border-top: 1px solid #334155;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: #a8bcd4;
 }
 
 .barra-sesion .btn {
@@ -82,12 +112,13 @@ body {
 header h1 {
     font-size: 1.4rem;
     margin-bottom: 0.25rem;
+    color: var(--fpt-white);
 }
 
 .modulo {
     margin-top: 1.75rem;
     padding-top: 1.5rem;
-    border-top: 1px solid #334155;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .modulo:first-of-type {
@@ -99,18 +130,19 @@ header h1 {
 .modulo-titulo {
     font-size: 1.1rem;
     margin-bottom: 1rem;
-    color: #e2e8f0;
+    color: var(--fpt-white);
+    letter-spacing: -0.01em;
 }
 
 .subtitulo {
-    color: #94a3b8;
+    color: #a8bcd4;
     font-size: 0.9rem;
     margin-bottom: 1.5rem;
 }
 
 .drop-zone {
-    border: 2px dashed #475569;
-    border-radius: 10px;
+    border: 2px dashed #5a79a8;
+    border-radius: 12px;
     padding: 2.5rem 1rem;
     text-align: center;
     cursor: pointer;
@@ -119,8 +151,8 @@ header h1 {
 
 .drop-zone:hover,
 .drop-zone.arrastrando {
-    border-color: #38bdf8;
-    background: rgba(56, 189, 248, 0.08);
+    border-color: var(--fpt-accent);
+    background: rgba(42, 111, 186, 0.12);
 }
 
 .drop-titulo {
@@ -129,7 +161,7 @@ header h1 {
 }
 
 .drop-hint {
-    color: #94a3b8;
+    color: #a8bcd4;
     font-size: 0.85rem;
     margin-top: 0.25rem;
 }
@@ -140,13 +172,14 @@ header h1 {
     gap: 0.9rem;
     margin: 1rem 0;
     padding: 0.7rem 0.9rem;
-    background: #334155;
-    border-radius: 8px;
+    background: rgba(11, 13, 40, 0.45);
+    border: 1px solid #46608c;
+    border-radius: 10px;
 }
 
 .opcion-auto small {
     display: block;
-    color: #94a3b8;
+    color: #a8bcd4;
     font-size: 0.78rem;
 }
 
@@ -172,7 +205,7 @@ header h1 {
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background: #64748b;
+    background: #5a79a8;
     border-radius: 26px;
     transition: background 0.2s;
 }
@@ -184,13 +217,13 @@ header h1 {
     width: 20px;
     left: 3px;
     top: 3px;
-    background: #e2e8f0;
+    background: var(--fpt-white);
     border-radius: 50%;
     transition: transform 0.2s;
 }
 
 .switch input:checked + .slider {
-    background: #22c55e;
+    background: var(--fpt-accent);
 }
 
 .switch input:checked + .slider::before {
@@ -209,7 +242,8 @@ header h1 {
     align-items: center;
     gap: 0.75rem;
     padding: 0.5rem 0.75rem;
-    background: #334155;
+    background: rgba(11, 13, 40, 0.45);
+    border: 1px solid #46608c;
     border-radius: 8px;
     margin-bottom: 0.4rem;
     font-size: 0.85rem;
@@ -221,7 +255,7 @@ header h1 {
 }
 
 .lista-archivos li small {
-    color: #94a3b8;
+    color: #a8bcd4;
 }
 
 .quitar {
@@ -243,16 +277,17 @@ header h1 {
     flex: 1;
     padding: 0.7rem;
     border: none;
-    border-radius: 8px;
-    background: #38bdf8;
-    color: #0f172a;
+    border-radius: 10px;
+    background: var(--fpt-accent);
+    color: var(--fpt-white);
+    font-family: inherit;
     font-weight: 600;
     cursor: pointer;
-    transition: filter 0.15s;
+    transition: filter 0.15s, background 0.15s;
 }
 
 .btn:hover:not(:disabled) {
-    filter: brightness(1.1);
+    filter: brightness(1.15);
 }
 
 .btn:disabled {
@@ -262,8 +297,8 @@ header h1 {
 
 .btn-secundario {
     flex: 0 0 auto;
-    background: #475569;
-    color: #e2e8f0;
+    background: #46608c;
+    color: var(--fpt-white);
 }
 
 .progreso {
@@ -271,7 +306,7 @@ header h1 {
 }
 
 .barra {
-    background: #334155;
+    background: rgba(11, 13, 40, 0.45);
     border-radius: 8px;
     height: 10px;
     overflow: hidden;
@@ -280,14 +315,14 @@ header h1 {
 .barra-inner {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #38bdf8, #22c55e);
+    background: linear-gradient(90deg, var(--fpt-accent), #4c9bd4);
     transition: width 0.3s;
 }
 
 .progreso-texto {
     margin-top: 0.5rem;
     font-size: 0.85rem;
-    color: #94a3b8;
+    color: #a8bcd4;
 }
 
 .resultado {
