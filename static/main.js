@@ -12,21 +12,6 @@ const loginError = document.getElementById('login-error');
 const infoSesion = document.getElementById('info-sesion');
 const btnSalir = document.getElementById('btn-salir');
 
-const dropZone = document.getElementById('drop-zone');
-const fileInput = document.getElementById('file-input');
-const listaArchivos = document.getElementById('lista-archivos');
-const btnProcesar = document.getElementById('btn-procesar');
-const btnLimpiar = document.getElementById('btn-limpiar');
-const toggleAuto = document.getElementById('toggle-auto');
-const progreso = document.getElementById('progreso');
-const barraInner = document.getElementById('barra-inner');
-const progresoTexto = document.getElementById('progreso-texto');
-const resultado = document.getElementById('resultado');
-
-let archivosSeleccionados = [];
-let procesando = false;
-let temporizadorAuto = null;
-
 function apiBase() {
     const base = localStorage.getItem(STORAGE_API) || '';
     return base ? base.replace(/\/+$/, '') : '';
@@ -130,225 +115,249 @@ inputContrasena.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') btnLogin.click();
 });
 
-// --- Lista de archivos ---
-function renderizarLista() {
-    listaArchivos.innerHTML = '';
-    archivosSeleccionados.forEach((f, i) => {
-        const li = document.createElement('li');
-        const tam = (f.size / 1024).toFixed(1);
-        li.innerHTML = `<span>${f.name}</span><small>${tam} KB</small>
-                        <button type="button" data-idx="${i}" class="quitar" title="Quitar">&times;</button>`;
-        listaArchivos.appendChild(li);
-    });
-    const hayPdfs = archivosSeleccionados.some(f => f.name.toLowerCase().endsWith('.pdf'));
-    btnProcesar.disabled = !hayPdfs || procesando;
-    btnLimpiar.disabled = archivosSeleccionados.length === 0 || procesando;
-    if (!procesando) resultado.hidden = true;
-}
+// --- Fábrica de módulos (envía 'tipo' al backend) ---
+function crearModulo(tipo, prefijo, nombreDescarga) {
+    const el = {
+        dropZone: document.getElementById(`drop-zone-${prefijo}`),
+        fileInput: document.getElementById(`file-input-${prefijo}`),
+        listaArchivos: document.getElementById(`lista-archivos-${prefijo}`),
+        btnProcesar: document.getElementById(`btn-procesar-${prefijo}`),
+        btnLimpiar: document.getElementById(`btn-limpiar-${prefijo}`),
+        toggleAuto: document.getElementById(`toggle-auto-${prefijo}`),
+        progreso: document.getElementById(`progreso-${prefijo}`),
+        barraInner: document.getElementById(`barra-inner-${prefijo}`),
+        progresoTexto: document.getElementById(`progreso-texto-${prefijo}`),
+        resultado: document.getElementById(`resultado-${prefijo}`),
+    };
 
-dropZone.addEventListener('click', () => fileInput.click());
+    let archivosSeleccionados = [];
+    let procesando = false;
+    let temporizadorAuto = null;
 
-dropZone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropZone.classList.add('arrastrando');
-});
-
-dropZone.addEventListener('dragleave', () => dropZone.classList.remove('arrastrando'));
-
-dropZone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropZone.classList.remove('arrastrando');
-    agregarArchivos(e.dataTransfer.files);
-});
-
-fileInput.addEventListener('change', () => {
-    agregarArchivos(fileInput.files);
-    fileInput.value = '';
-});
-
-function agregarArchivos(lista) {
-    let agregados = 0;
-    for (const f of lista) {
-        if (f.name.toLowerCase().endsWith('.pdf') &&
-            !archivosSeleccionados.some(a => a.name === f.name)) {
-            archivosSeleccionados.push(f);
-            agregados++;
-        }
-    }
-    if (agregados > 0) {
-        renderizarLista();
-        programarAutomatico();
-    }
-}
-
-listaArchivos.addEventListener('click', (e) => {
-    const btn = e.target.closest('.quitar');
-    if (!btn) return;
-    archivosSeleccionados.splice(Number(btn.dataset.idx), 1);
-    renderizarLista();
-});
-
-btnLimpiar.addEventListener('click', () => {
-    clearTimeout(temporizadorAuto);
-    archivosSeleccionados = [];
-    renderizarLista();
-});
-
-btnProcesar.addEventListener('click', () => {
-    clearTimeout(temporizadorAuto);
-    procesar();
-});
-
-toggleAuto.addEventListener('change', () => {
-    if (toggleAuto.checked && archivosSeleccionados.length > 0 && !procesando) {
-        programarAutomatico();
-    }
-});
-
-// --- Procesamiento ---
-function procesar() {
-    if (procesando || archivosSeleccionados.length === 0) return;
-    const aProcesar = [...archivosSeleccionados];
-    archivosSeleccionados = [];
-    renderizarLista();
-
-    procesando = true;
-    btnProcesar.disabled = true;
-    btnLimpiar.disabled = true;
-    resultado.hidden = true;
-    progreso.hidden = false;
-    barraInner.style.width = '0%';
-    progresoTexto.textContent = 'Subiendo archivos...';
-
-    const formData = new FormData();
-    for (const f of aProcesar) {
-        formData.append('archivos', f);
-    }
-
-    llamar('/procesar', { method: 'POST', body: formData })
-        .then(({ resp, data }) => {
-            if (resp.status === 413) {
-                throw new Error('El lote supera el tamaño máximo permitido (50 MB).');
-            }
-            if (resp.status === 401) {
-                cerrarSesion();
-                throw new Error('Sesión expirada. Vuelva a ingresar.');
-            }
-            if (!data || !data.ok) {
-                throw new Error((data && data.error) || 'Error al procesar.');
-            }
-            vigilarJob(data.job_id);
-        })
-        .catch(err => mostrarResultado(false, err.message || 'Error de conexión con el servidor.', []));
-}
-
-function programarAutomatico() {
-    if (!toggleAuto.checked || procesando) return;
-    clearTimeout(temporizadorAuto);
-    temporizadorAuto = setTimeout(procesar, 600);
-}
-
-function vigilarJob(jobId) {
-    let cerrado = false;
-    const intervalo = setInterval(async () => {
-        if (cerrado) return;
-        try {
-            const { resp, data } = await llamar(`/estado/${jobId}`);
-            if (resp.status === 401) {
-                clearInterval(intervalo);
-                cerrarSesion();
-                mostrarResultado(false, 'Sesión expirada. Vuelva a ingresar.', []);
-                finalizarProcesamiento();
-                return;
-            }
-            if (!data || !data.ok) throw new Error(data ? data.error : 'Error de estado.');
-
-            const job = data.job;
-            const pct = job.total > 0 ? Math.round((job.actual / job.total) * 100) : 0;
-            barraInner.style.width = `${pct}%`;
-            if (job.status === 'procesando' || job.status === 'en_cola') {
-                progresoTexto.textContent = job.status === 'en_cola'
-                    ? 'En cola de espera...'
-                    : `Procesando ${job.actual} de ${job.total}: ${job.archivo_actual}`;
-                return;
-            }
-
-            cerrado = true;
-            clearInterval(intervalo);
-            barraInner.style.width = '100%';
-            progresoTexto.textContent = 'Finalizando...';
-
-            if (job.status === 'error' || job.camaras === 0) {
-                const msj = job.camaras === 0
-                    ? 'Ningún PDF pudo procesarse.'
-                    : 'Ocurrió un error durante el procesamiento.';
-                mostrarResultado(false, msj, job.errores);
-                finalizarProcesamiento();
-                return;
-            }
-
-            let aviso = `Se procesaron ${job.camaras} cámaras correctamente.`;
-            if (job.descartados > 0) {
-                aviso += ` Se descartaron ${job.descartados} archivo(s) que no eran PDF.`;
-            }
-            mostrarResultado(true, aviso, job.errores);
-            await descargarExcel(jobId);
-            finalizarProcesamiento();
-        } catch (err) {
-            clearInterval(intervalo);
-            if (!cerrado) {
-                mostrarResultado(false, err.message || 'Error al consultar el estado.', []);
-            }
-            finalizarProcesamiento();
-        }
-    }, 500);
-}
-
-async function descargarExcel(jobId, reintento = true) {
-    try {
-        const resp = await fetch(`${apiBase()}/descargar/${jobId}`, { headers: cabeceras() });
-        if (!resp.ok) {
-            if (reintento) {
-                await new Promise(r => setTimeout(r, 1000));
-                return descargarExcel(jobId, false);
-            }
-            throw new Error('No se pudo descargar el archivo.');
-        }
-        const blob = await resp.blob();
-        const urlObjeto = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = urlObjeto;
-        link.download = 'consolidado_liquidaciones_tesoreria.xlsx';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(urlObjeto);
-    } catch (e) {
-        mostrarResultado(false, e.message, []);
-    }
-}
-
-function finalizarProcesamiento() {
-    procesando = false;
-    progreso.hidden = true;
-    btnProcesar.disabled = archivosSeleccionados.length === 0;
-    btnLimpiar.disabled = archivosSeleccionados.length === 0;
-    if (archivosSeleccionados.length > 0 && toggleAuto.checked) {
-        programarAutomatico();
-    }
-}
-
-function mostrarResultado(ok, mensaje, errores) {
-    resultado.hidden = false;
-    resultado.className = ok ? 'resultado ok' : 'resultado error';
-    resultado.innerHTML = `<p><strong>${ok ? '¡Listo!' : 'Error'}:</strong> ${mensaje}</p>`;
-    if (errores && errores.length) {
-        const ul = document.createElement('ul');
-        errores.forEach(e => {
+    function renderizarLista() {
+        el.listaArchivos.innerHTML = '';
+        archivosSeleccionados.forEach((f, i) => {
             const li = document.createElement('li');
-            li.textContent = `${e.archivo}: ${e.error}`;
-            ul.appendChild(li);
+            const tam = (f.size / 1024).toFixed(1);
+            li.innerHTML = `<span>${f.name}</span><small>${tam} KB</small>
+                            <button type="button" data-idx="${i}" class="quitar" title="Quitar">&times;</button>`;
+            el.listaArchivos.appendChild(li);
         });
-        resultado.appendChild(ul);
+        const hayPdfs = archivosSeleccionados.some(f => f.name.toLowerCase().endsWith('.pdf'));
+        el.btnProcesar.disabled = !hayPdfs || procesando;
+        el.btnLimpiar.disabled = archivosSeleccionados.length === 0 || procesando;
+        if (!procesando) el.resultado.hidden = true;
     }
+
+    function agregarArchivos(lista) {
+        let agregados = 0;
+        for (const f of lista) {
+            if (f.name.toLowerCase().endsWith('.pdf') &&
+                !archivosSeleccionados.some(a => a.name === f.name)) {
+                archivosSeleccionados.push(f);
+                agregados++;
+            }
+        }
+        if (agregados > 0) {
+            renderizarLista();
+            programarAutomatico();
+        }
+    }
+
+    function programarAutomatico() {
+        if (!el.toggleAuto.checked || procesando) return;
+        clearTimeout(temporizadorAuto);
+        temporizadorAuto = setTimeout(procesar, 600);
+    }
+
+    function procesar() {
+        if (procesando || archivosSeleccionados.length === 0) return;
+        const aProcesar = [...archivosSeleccionados];
+        archivosSeleccionados = [];
+        renderizarLista();
+
+        procesando = true;
+        el.btnProcesar.disabled = true;
+        el.btnLimpiar.disabled = true;
+        el.resultado.hidden = true;
+        el.progreso.hidden = false;
+        el.barraInner.style.width = '0%';
+        el.progresoTexto.textContent = 'Subiendo archivos...';
+
+        const formData = new FormData();
+        formData.append('tipo', tipo);
+        for (const f of aProcesar) {
+            formData.append('archivos', f);
+        }
+
+        llamar('/procesar', { method: 'POST', body: formData })
+            .then(({ resp, data }) => {
+                if (resp.status === 413) {
+                    throw new Error('El lote supera el tamaño máximo permitido (50 MB).');
+                }
+                if (resp.status === 401) {
+                    cerrarSesion();
+                    throw new Error('Sesión expirada. Vuelva a ingresar.');
+                }
+                if (!data || !data.ok) {
+                    throw new Error((data && data.error) || 'Error al procesar.');
+                }
+                vigilarJob(data.job_id);
+            })
+            .catch(err => mostrarResultado(false, err.message || 'Error de conexión con el servidor.', []));
+    }
+
+    function vigilarJob(jobId) {
+        let cerrado = false;
+        const intervalo = setInterval(async () => {
+            if (cerrado) return;
+            try {
+                const { resp, data } = await llamar(`/estado/${jobId}`);
+                if (resp.status === 401) {
+                    clearInterval(intervalo);
+                    cerrarSesion();
+                    mostrarResultado(false, 'Sesión expirada. Vuelva a ingresar.', []);
+                    finalizarProcesamiento();
+                    return;
+                }
+                if (!data || !data.ok) throw new Error(data ? data.error : 'Error de estado.');
+
+                const job = data.job;
+                const pct = job.total > 0 ? Math.round((job.actual / job.total) * 100) : 0;
+                el.barraInner.style.width = `${pct}%`;
+                if (job.status === 'procesando' || job.status === 'en_cola') {
+                    el.progresoTexto.textContent = job.status === 'en_cola'
+                        ? 'En cola de espera...'
+                        : `Procesando ${job.actual} de ${job.total}: ${job.archivo_actual}`;
+                    return;
+                }
+
+                cerrado = true;
+                clearInterval(intervalo);
+                el.barraInner.style.width = '100%';
+                el.progresoTexto.textContent = 'Finalizando...';
+
+                if (job.status === 'error' || job.camaras === 0) {
+                    const msj = job.camaras === 0
+                        ? 'Ningún PDF pudo procesarse.'
+                        : 'Ocurrió un error durante el procesamiento.';
+                    mostrarResultado(false, msj, job.errores);
+                    finalizarProcesamiento();
+                    return;
+                }
+
+                let aviso = `Se procesaron ${job.camaras} archivo(s) correctamente.`;
+                if (job.descartados > 0) {
+                    aviso += ` Se descartaron ${job.descartados} archivo(s) que no eran PDF.`;
+                }
+                mostrarResultado(true, aviso, job.errores);
+                await descargarExcel(jobId);
+                finalizarProcesamiento();
+            } catch (err) {
+                clearInterval(intervalo);
+                if (!cerrado) {
+                    mostrarResultado(false, err.message || 'Error al consultar el estado.', []);
+                }
+                finalizarProcesamiento();
+            }
+        }, 500);
+    }
+
+    async function descargarExcel(jobId, reintento = true) {
+        try {
+            const resp = await fetch(`${apiBase()}/descargar/${jobId}`, { headers: cabeceras() });
+            if (!resp.ok) {
+                if (reintento) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    return descargarExcel(jobId, false);
+                }
+                throw new Error('No se pudo descargar el archivo.');
+            }
+            const blob = await resp.blob();
+            const urlObjeto = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = urlObjeto;
+            link.download = nombreDescarga;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(urlObjeto);
+        } catch (e) {
+            mostrarResultado(false, e.message, []);
+        }
+    }
+
+    function finalizarProcesamiento() {
+        procesando = false;
+        el.progreso.hidden = true;
+        el.btnProcesar.disabled = archivosSeleccionados.length === 0;
+        el.btnLimpiar.disabled = archivosSeleccionados.length === 0;
+        if (archivosSeleccionados.length > 0 && el.toggleAuto.checked) {
+            programarAutomatico();
+        }
+    }
+
+    function mostrarResultado(ok, mensaje, errores) {
+        el.resultado.hidden = false;
+        el.resultado.className = ok ? 'resultado ok' : 'resultado error';
+        el.resultado.innerHTML = `<p><strong>${ok ? '¡Listo!' : 'Error'}:</strong> ${mensaje}</p>`;
+        if (errores && errores.length) {
+            const ul = document.createElement('ul');
+            errores.forEach(e => {
+                const li = document.createElement('li');
+                li.textContent = `${e.archivo}: ${e.error}`;
+                ul.appendChild(li);
+            });
+            el.resultado.appendChild(ul);
+        }
+    }
+
+    // --- Eventos del módulo ---
+    el.dropZone.addEventListener('click', () => el.fileInput.click());
+
+    el.dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        el.dropZone.classList.add('arrastrando');
+    });
+
+    el.dropZone.addEventListener('dragleave', () => el.dropZone.classList.remove('arrastrando'));
+
+    el.dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        el.dropZone.classList.remove('arrastrando');
+        agregarArchivos(e.dataTransfer.files);
+    });
+
+    el.fileInput.addEventListener('change', () => {
+        agregarArchivos(el.fileInput.files);
+        el.fileInput.value = '';
+    });
+
+    el.listaArchivos.addEventListener('click', (e) => {
+        const btnQuitar = e.target.closest('.quitar');
+        if (!btnQuitar) return;
+        archivosSeleccionados.splice(Number(btnQuitar.dataset.idx), 1);
+        renderizarLista();
+    });
+
+    el.btnLimpiar.addEventListener('click', () => {
+        clearTimeout(temporizadorAuto);
+        archivosSeleccionados = [];
+        renderizarLista();
+    });
+
+    el.btnProcesar.addEventListener('click', () => {
+        clearTimeout(temporizadorAuto);
+        procesar();
+    });
+
+    el.toggleAuto.addEventListener('change', () => {
+        if (el.toggleAuto.checked && archivosSeleccionados.length > 0 && !procesando) {
+            programarAutomatico();
+        }
+    });
 }
+
+// --- Instanciar los dos módulos ---
+crearModulo('liquidaciones', 'liq', 'consolidado_liquidaciones_tesoreria.xlsx');
+crearModulo('facturas', 'fac', 'planilla_facturas_camaras.xlsx');

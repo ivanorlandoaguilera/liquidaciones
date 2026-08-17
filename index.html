@@ -37,43 +37,84 @@
         <section id="vista-app" class="vista" hidden>
             <header>
                 <h1>Consolidación de Liquidaciones de Tesorería</h1>
-                <p class="subtitulo">Adjunte las liquidaciones (PDF) de las cámaras y genere el Excel consolidado.</p>
+                <p class="subtitulo">Adjunte los PDF (liquidaciones o facturas) y genere el Excel correspondiente.</p>
                 <div class="barra-sesion">
                     <span id="info-sesion"></span>
                     <button id="btn-salir" class="btn btn-secundario">Salir</button>
                 </div>
             </header>
 
-            <div class="opcion-auto">
-                <label class="switch">
-                    <input type="checkbox" id="toggle-auto" checked>
-                    <span class="slider"></span>
-                </label>
-                <div>
-                    <strong>Procesamiento automático</strong>
-                    <small>Procesar al subir los archivos. Si lo desactiva, use el botón "Procesar".</small>
+            <!-- Módulo 1: Liquidaciones -->
+            <section class="modulo">
+                <h2 class="modulo-titulo">Generación de planilla de liquidaciones de cámaras</h2>
+
+                <div class="opcion-auto">
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-auto-liq" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <strong>Procesamiento automático</strong>
+                        <small>Procesar al subir los archivos. Si lo desactiva, use el botón "Procesar".</small>
+                    </div>
                 </div>
-            </div>
 
-            <div id="drop-zone" class="drop-zone">
-                <input type="file" id="file-input" accept=".pdf" multiple hidden>
-                <p class="drop-titulo">Arrastre y suelte los PDFs aquí</p>
-                <p class="drop-hint">o haga clic para seleccionarlos (puede elegir varios)</p>
-            </div>
+                <div id="drop-zone-liq" class="drop-zone">
+                    <input type="file" id="file-input-liq" accept=".pdf" multiple hidden>
+                    <p class="drop-titulo">Arrastre y suelte los PDFs aquí</p>
+                    <p class="drop-hint">o haga clic para seleccionarlos (puede elegir varios)</p>
+                </div>
 
-            <ul id="lista-archivos" class="lista-archivos"></ul>
+                <ul id="lista-archivos-liq" class="lista-archivos"></ul>
 
-            <div class="acciones">
-                <button id="btn-procesar" class="btn" disabled>Procesar</button>
-                <button id="btn-limpiar" class="btn btn-secundario" disabled>Limpiar</button>
-            </div>
+                <div class="acciones">
+                    <button id="btn-procesar-liq" class="btn" disabled>Procesar</button>
+                    <button id="btn-limpiar-liq" class="btn btn-secundario" disabled>Limpiar</button>
+                </div>
 
-            <div id="progreso" class="progreso" hidden>
-                <div class="barra"><div id="barra-inner" class="barra-inner"></div></div>
-                <p id="progreso-texto" class="progreso-texto"></p>
-            </div>
+                <div id="progreso-liq" class="progreso" hidden>
+                    <div class="barra"><div id="barra-inner-liq" class="barra-inner"></div></div>
+                    <p id="progreso-texto-liq" class="progreso-texto"></p>
+                </div>
 
-            <div id="resultado" class="resultado" hidden></div>
+                <div id="resultado-liq" class="resultado" hidden></div>
+            </section>
+
+            <!-- Módulo 2: Facturas -->
+            <section class="modulo">
+                <h2 class="modulo-titulo">Creación de planilla de factura de cámaras</h2>
+
+                <div class="opcion-auto">
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-auto-fac" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <strong>Procesamiento automático</strong>
+                        <small>Procesar al subir los archivos. Si lo desactiva, use el botón "Procesar".</small>
+                    </div>
+                </div>
+
+                <div id="drop-zone-fac" class="drop-zone">
+                    <input type="file" id="file-input-fac" accept=".pdf" multiple hidden>
+                    <p class="drop-titulo">Arrastre y suelte los PDFs aquí</p>
+                    <p class="drop-hint">o haga clic para seleccionarlos (puede elegir varios)</p>
+                </div>
+
+                <ul id="lista-archivos-fac" class="lista-archivos"></ul>
+
+                <div class="acciones">
+                    <button id="btn-procesar-fac" class="btn" disabled>Procesar</button>
+                    <button id="btn-limpiar-fac" class="btn btn-secundario" disabled>Limpiar</button>
+                </div>
+
+                <div id="progreso-fac" class="progreso" hidden>
+                    <div class="barra"><div id="barra-inner-fac" class="barra-inner"></div></div>
+                    <p id="progreso-texto-fac" class="progreso-texto"></p>
+                </div>
+
+                <div id="resultado-fac" class="resultado" hidden></div>
+            </section>
         </section>
     </main>
 
